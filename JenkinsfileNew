@@ -1,0 +1,35 @@
+node {
+    def mavenHome = tool name: 'maven 3.9.9' // tool name must be in quotes
+
+    stage('Git Checkout') {
+        git branch: 'development',
+            credentialsId: '2c659f70-d9cd-47b6-ae34-73f85e36c1f2',
+            url: 'https://github.com/koti576/maven-web-app-project-kk-funda.git'
+    }
+
+    stage('Maven Build') {
+        sh "${mavenHome}/bin/mvn clean package"
+    }
+	stage('Sonar Qube Report')
+	{
+	sh "${mavenHome}/bin/mvn sonar:sonar"
+	}
+	stage('Deploy into Nexus')
+	
+	sh "${mavenHome}/bin/mvn clean deploy"
+	
+	{
+	
+	stage('Deploy to Tomcat')
+	{
+
+	echo "Deploying WAR File using curl..."
+	
+	sh """
+	curl -u kkfunda:kkfunda \
+	--upload-file /var/lib/jenkins/workspace/AIRTEL-Scripted-pipeline-development/target/
+	maven-web-application.war \
+	"http://44.201.252.96:9090/manager/text/deploy?path=/maven-web-application&update=true"
+	""" 
+	
+} //node closing
